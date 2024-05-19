@@ -3,7 +3,7 @@ package helper
 import (
 	"bytes"
 	"fmt"
-	"github.com/SyamSolution/notification-service/model"
+	"github.com/SyamSolution/notification-service/internal/model"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ses"
@@ -31,11 +31,10 @@ func SendCreateTransactionMail(message model.DataMessage) {
 		fmt.Println("Error executing email template", err)
 	}
 
-	// Compose the email
 	emailParams := &ses.SendEmailInput{
 		Destination: &ses.Destination{
 			ToAddresses: []*string{
-				aws.String("syamsularie12@gmail.com"), // Replace with the recipient email address
+				aws.String(message.Email),
 			},
 		},
 		Message: &ses.Message{
@@ -45,13 +44,12 @@ func SendCreateTransactionMail(message model.DataMessage) {
 				},
 			},
 			Subject: &ses.Content{
-				Data: aws.String("Test Email"), // Replace with your email subject
+				Data: aws.String("New Transaction"),
 			},
 		},
-		Source: aws.String("syams.arie@gmail.com"), // Replace with the sender email address
+		Source: aws.String("syams.arie@gmail.com"),
 	}
 
-	// Send the email
 	_, err = svc.SendEmail(emailParams)
 	if err != nil {
 		fmt.Println("Error sending email", err)
@@ -78,11 +76,10 @@ func SendCompletedTransactionMail(message model.CompleteTransactionMessage) {
 		fmt.Println("Error executing email template", err)
 	}
 
-	// Compose the email
 	emailParams := &ses.SendEmailInput{
 		Destination: &ses.Destination{
 			ToAddresses: []*string{
-				aws.String("syamsularie12@gmail.com"), // Replace with the recipient email address
+				aws.String(message.Email),
 			},
 		},
 		Message: &ses.Message{
@@ -92,10 +89,10 @@ func SendCompletedTransactionMail(message model.CompleteTransactionMessage) {
 				},
 			},
 			Subject: &ses.Content{
-				Data: aws.String("Test Email"), // Replace with your email subject
+				Data: aws.String("Trsanction Completed"),
 			},
 		},
-		Source: aws.String("syams.arie@gmail.com"), // Replace with the sender email address
+		Source: aws.String("syams.arie@gmail.com"),
 	}
 
 	// Send the email
@@ -177,6 +174,7 @@ var emailTmplCreateTransaction = `
             text-decoration: none;
             padding: 10px 20px;
             border-radius: 5px;
+			text-align: center;
         }
     </style>
 </head>
@@ -207,7 +205,7 @@ var emailTmplCreateTransaction = `
             
             <br>
             
-            <a href="{{.URL}}" class="button">View Order</a>
+            <a href="{{.URL}}" class="button">Payment Here</a>
         </div>
         <div class="footer">
             <p>Copyright © 2024. All rights reserved.</p>
