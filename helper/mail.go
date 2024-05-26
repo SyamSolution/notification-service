@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ses"
+	"log"
 	"os"
 	"text/template"
 )
@@ -56,49 +57,43 @@ func SendCreateTransactionMail(message model.DataMessage) {
 	}
 }
 
-func SendCompletedTransactionMail(message model.CompleteTransactionMessage) {
+func SendEmailWithPDF(message model.EmailPDFMessage) {
+	pdfBase64, err := GeneratePDF(message)
+	if err != nil {
+		log.Println("Error generating PDF", err)
+	}
+
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(os.Getenv("AWS_REGION")),
 	})
 	if err != nil {
 		fmt.Println("Error creating session", err)
 	}
-
 	svc := ses.New(sess)
 
-	tmpl, err := template.New("email").Parse(emailTmplCompleteTransaction)
+	rawEmail := fmt.Sprintf(
+		"From: %s\r\nTo: %s\r\nSubject: %s\r\nMIME-Version: 1.0\r\n"+
+			"Content-Type: multipart/mixed; boundary=\"%s\"\r\n\r\n"+
+			"--%s\r\n"+
+			"Content-Type: text/html; charset=UTF-8\r\n"+
+			"Content-Transfer-Encoding: 7bit\r\n\r\n"+
+			"%s\r\n\r\n"+
+			"--%s\r\n"+
+			"Content-Type: application/pdf; name=\"attachment.pdf\"\r\n"+
+			"Content-Transfer-Encoding: base64\r\n"+
+			"Content-Disposition: attachment; filename=\"attachment.pdf\"\r\n\r\n"+
+			"%s\r\n\r\n"+
+			"--%s--\r\n",
+		"syams.arie@gmail.com", message.Email, "pdf", "boundary123", "boundary123", emailTmplCompleteTransaction, "boundary123", pdfBase64, "boundary123",
+	)
+
+	input := &ses.SendRawEmailInput{
+		RawMessage: &ses.RawMessage{Data: []byte(rawEmail)},
+	}
+
+	_, err = svc.SendRawEmail(input)
 	if err != nil {
-		fmt.Println("Error parsing email template", err)
-	}
-
-	var htmlBody bytes.Buffer
-	if err := tmpl.Execute(&htmlBody, message); err != nil {
-		fmt.Println("Error executing email template", err)
-	}
-
-	emailParams := &ses.SendEmailInput{
-		Destination: &ses.Destination{
-			ToAddresses: []*string{
-				aws.String(message.Email),
-			},
-		},
-		Message: &ses.Message{
-			Body: &ses.Body{
-				Html: &ses.Content{
-					Data: aws.String(htmlBody.String()),
-				},
-			},
-			Subject: &ses.Content{
-				Data: aws.String("Trsanction Completed"),
-			},
-		},
-		Source: aws.String("syams.arie@gmail.com"),
-	}
-
-	// Send the email
-	_, err = svc.SendEmail(emailParams)
-	if err != nil {
-		fmt.Println("Error sending email", err)
+		panic(err)
 	}
 }
 
