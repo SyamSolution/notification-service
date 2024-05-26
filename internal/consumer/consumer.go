@@ -11,7 +11,7 @@ import (
 )
 
 func Consumer(master sarama.Consumer, doneCh chan struct{}) {
-	consumer, errors := helper.Consume(master, []string{"create-transaction", "completed-transaction"})
+	consumer, errors := helper.Consume(master, []string{"create-transaction", "send-pdf"})
 
 	signals := make(chan os.Signal, 1)
 	for {
@@ -28,16 +28,16 @@ func Consumer(master sarama.Consumer, doneCh chan struct{}) {
 				log.Println("consume email create transaction")
 
 				helper.SendCreateTransactionMail(message)
-			case "completed-transaction":
-				var message model.CompleteTransactionMessage
+			case "send-pdf":
+				var message model.EmailPDFMessage
 				err := json.Unmarshal(msg.Value, &message)
 				if err != nil {
 					fmt.Println("Error unmarshalling message", err)
 				}
 
-				log.Println("consume email completed transaction")
+				log.Println("consume email send pdf")
 
-				helper.SendCompletedTransactionMail(message)
+				helper.SendEmailWithPDF(message)
 			}
 		case consumerError := <-errors:
 			fmt.Println("Received consumer error", (consumerError).Error())
