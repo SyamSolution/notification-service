@@ -3,17 +3,24 @@ package helper
 import (
 	"bytes"
 	"encoding/base64"
-	"github.com/SyamSolution/notification-service/internal/model"
-	"github.com/signintech/gopdf"
 	"log"
 	"strconv"
+
+	"github.com/SyamSolution/notification-service/internal/model"
+	"github.com/signintech/gopdf"
 )
 
 func GeneratePDF(message model.EmailPDFMessage) (string, error) {
 	pdf := gopdf.GoPdf{}
 	pdf.Start(gopdf.Config{PageSize: *gopdf.PageSizeA4})
 	pdf.AddPage()
-	err := pdf.AddTTFFont("times", "./times.ttf")
+	
+	err := pdf.Image("./assets/image/header.png", 0, 0, nil)
+	if err != nil {
+		log.Print(err.Error())
+		return "", err
+	}
+	err = pdf.AddTTFFont("times", "./assets/font/times.ttf")
 	if err != nil {
 		log.Print(err.Error())
 		return "", err
@@ -25,9 +32,27 @@ func GeneratePDF(message model.EmailPDFMessage) (string, error) {
 		return "", err
 	}
 
-	pdf.Cell(nil, "Concert Music 2024")
-	pdf.Br(40)
-	pdf.Cell(nil, "Ticket Order")
+	leftMargin := 40.0
+	topMargin := 40.0
+	pdf.SetLeftMargin(leftMargin)
+	pdf.SetTopMargin(topMargin)
+
+	pageWidth := gopdf.PageSizeA4.W - leftMargin
+
+	textWidth, err := pdf.MeasureTextWidth("CONCERT MUSIC 2024")
+	if err != nil {
+		log.Print(err.Error())
+	}
+	x := (pageWidth - textWidth) / 2 + 20
+	y := 170.0
+	
+	pdf.SetX(x)
+	pdf.SetY(y)
+
+	pdf.SetFont("times", "B", 30)
+	pdf.Cell(nil, "CONCERT MUSIC 2024")
+
+	pdf.SetFont("times", "", 14)
 	pdf.Br(40)
 	pdf.Cell(nil, "Order ID: "+message.OrderId)
 	pdf.Br(20)
@@ -62,6 +87,7 @@ func GeneratePDF(message model.EmailPDFMessage) (string, error) {
 		log.Print(err.Error())
 		return "", err
 	}
+	pdf.WritePdf("ticket.pdf")
 
 	// Convert the byte buffer to a base64 string
 	pdfBase64 := base64.StdEncoding.EncodeToString(buf.Bytes())
