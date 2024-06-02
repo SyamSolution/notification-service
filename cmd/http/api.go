@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
+
 	"github.com/IBM/sarama"
 	"github.com/SyamSolution/notification-service/config"
 	"github.com/SyamSolution/notification-service/config/middleware"
@@ -9,8 +12,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus"
-	"log"
-	"os"
 )
 
 func main() {
@@ -28,22 +29,7 @@ func main() {
 	config := sarama.NewConfig()
 	config.Consumer.Return.Errors = true
 
-	brokers := []string{os.Getenv("KAFKA_BROKER")}
-	master, err := sarama.NewConsumer(brokers, config)
-	if err != nil {
-		log.Panicf("Error creating consumer: %s", err)
-	}
-	defer func() {
-		if err := master.Close(); err != nil {
-			log.Panicf("Error closing consumer: %s", err)
-		}
-	}()
-
-	log.Println("Connected to Kafka broker")
-
-	doneCh := make(chan struct{})
-	go consumer.Consumer(master, doneCh)
-
+	go consumer.StartConsumer()
 	app := fiber.New()
 
 	// Define routes and their handlers
@@ -56,13 +42,9 @@ func main() {
 	app.Use(fiberProm.Middleware)
 
 	// Start the Fiber server
-	go func() {
-		if err := app.Listen(fmt.Sprintf(":%s", os.Getenv("APP_PORT"))); err != nil {
-			log.Fatal(err)
-		}
-	}()
-
-	<-doneCh
+	if err := app.Listen(fmt.Sprintf(":%s", os.Getenv("APP_PORT"))); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func loadEnv(logger config.Logger) {

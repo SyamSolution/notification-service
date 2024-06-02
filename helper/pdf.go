@@ -87,7 +87,7 @@ func GeneratePDF(message model.EmailPDFMessage) (string, error) {
 		log.Print(err.Error())
 		return "", err
 	}
-	pdf.WritePdf("ticket.pdf")
+	// pdf.WritePdf("ticket.pdf")
 
 	// Convert the byte buffer to a base64 string
 	pdfBase64 := base64.StdEncoding.EncodeToString(buf.Bytes())
