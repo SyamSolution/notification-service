@@ -14,7 +14,7 @@ func GeneratePDF(message model.EmailPDFMessage) (string, error) {
 	pdf := gopdf.GoPdf{}
 	pdf.Start(gopdf.Config{PageSize: *gopdf.PageSizeA4})
 	pdf.AddPage()
-	
+
 	err := pdf.Image("./assets/image/header.png", 0, 0, nil)
 	if err != nil {
 		log.Print(err.Error())
@@ -43,20 +43,30 @@ func GeneratePDF(message model.EmailPDFMessage) (string, error) {
 	if err != nil {
 		log.Print(err.Error())
 	}
-	x := (pageWidth - textWidth) / 2 + 20
+	x := (pageWidth-textWidth)/2 + 20
 	y := 170.0
-	
+
 	pdf.SetX(x)
 	pdf.SetY(y)
 
-	pdf.SetFont("times", "B", 30)
-	pdf.Cell(nil, "CONCERT MUSIC 2024")
+	if err := pdf.SetFont("times", "B", 30); err != nil {
+		log.Print(err.Error())
+	}
+	if err := pdf.Cell(nil, "CONCERT MUSIC 2024"); err != nil {
+		log.Print(err.Error())
+	}
 
-	pdf.SetFont("times", "", 14)
+	if err := pdf.SetFont("times", "", 14); err != nil {
+		log.Print(err.Error())
+	}
 	pdf.Br(40)
-	pdf.Cell(nil, "Order ID: "+message.OrderId)
+	if err := pdf.Cell(nil, "Order ID: "+message.OrderId); err != nil {
+		log.Println(err.Error())
+	}
 	pdf.Br(20)
-	pdf.Cell(nil, "Event Name: "+message.EventName)
+	if err := pdf.Cell(nil, "Event Name: "+message.EventName); err != nil {
+		log.Println(err.Error())
+	}
 	pdf.Br(20)
 	pdf.Cell(nil, "Price: "+strconv.Itoa(int(message.Price)))
 	pdf.Br(20)
